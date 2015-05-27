@@ -20,8 +20,10 @@ class AckProtocolEntity(ProtocolEntity):
     def toProtocolTreeNode(self):
         attribs = {
             "id"           : self._id,
-            "class"        : self._class,
         }
+
+        if self._class != "":
+            attribs["class"] = self._class
 
         return self._createProtocolTreeNode(attribs, None, data = None)
 
