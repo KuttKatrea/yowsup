@@ -13,9 +13,9 @@ class IncomingReceiptProtocolEntity(ReceiptProtocolEntity):
     <receipt offline="0" from="xxxxxxxxxx@s.whatsapp.net" id="1415577964-1" t="1415578027"></receipt>
     '''
 
-    def __init__(self, _id, _from, timestamp, offline = None, type = None):
+    def __init__(self, _id, _from, timestamp, offline = None, retry = None, type = None, children = False):
         super(IncomingReceiptProtocolEntity, self).__init__(_id)
-        self.setIncomingData(_from, timestamp, offline, type)
+        self.setIncomingData(_from, timestamp, offline, retry, type, children)
 
     def getType(self):
         return self.type
@@ -23,12 +23,17 @@ class IncomingReceiptProtocolEntity(ReceiptProtocolEntity):
     def getFrom(self):
         return self._from
 
-    def setIncomingData(self, _from, timestamp, offline, type = None):
+    def setIncomingData(self, _from, timestamp, offline, retry = None, type = None, children = None):
         self._from = _from
         self.timestamp = timestamp
         self.type = type
+        self.children = children
         if offline is not None:
-            self.offline = True if offline == "1" else False
+            print("Offline is %s" % offline)
+            print("Retry is %s" % retry)
+            self.offline = True
+            self.offline_count = offline
+            self.retry =  retry
         else:
             self.offline = None
 
@@ -50,14 +55,26 @@ class IncomingReceiptProtocolEntity(ReceiptProtocolEntity):
             out += "Offline: %s\n" % ("1" if self.offline else "0")
         if self.type is not None:
             out += "Type: %s\n" % (self.type)
+        if self.children is not None:
+            out += "Children: %s\n" % (self.children)
         return out
 
     @staticmethod
     def fromProtocolTreeNode(node):
+        children = None
+
+        children_list = node.getChild('list')
+        if children_list is not None:
+            children = list()
+            for child in children_list.children:
+                children.append(child.getAttributeValue('id'))
+
         return IncomingReceiptProtocolEntity(
             node.getAttributeValue("id"),
             node.getAttributeValue("from"),
             node.getAttributeValue("t"),
             node.getAttributeValue("offline"),
-            node.getAttributeValue("type")
+            node.getAttributeValue("retry"),
+            node.getAttributeValue("type"),
+            children
             )
